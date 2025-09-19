@@ -19,9 +19,12 @@ public class Organization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    private AppUser accountManager;  // for secutiry
-    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)
-    private Set<AppUser> accountManagers = new HashSet<>();
+    @OneToOne
+    @JoinColumn(name = "account_manager_id", unique = true)
+    private AppUser accountManager;  // for secutiry
+
+//    @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL)   //maybe add multiple admins for one orgnztion
+//    private Set<AppUser> accountManagers = new HashSet<>();
 
     private String companyName;
     private String address;
