@@ -21,30 +21,27 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/organizations")
 @SecurityRequirement(name = Constants.SCHEME_NAME)
-@Tag(name = "Admin", description = "APIs for managing organizations. Login with admin credentials to access.")
-public class OrganizationController {
+@Tag(name = "Organizations (Admin)", description = "APIs for managing organizations. Login with admin credentials to access.")
+public class AdminOrganizationController {
 
     private final OrganizationService organizationService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrganizationResponse> create(@RequestBody OrganizationRequest request) {
-        OrganizationResponse response = organizationService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(organizationService.create(request));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<OrganizationResponse>> getAll() {
-        List<OrganizationResponse> response = organizationService.getAll();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(organizationService.getAll());
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<OrganizationResponse> getById(@PathVariable Long id) {
-        OrganizationResponse response = organizationService.getById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(organizationService.getById(id));
     }
 
     @DeleteMapping("/{id}")
@@ -58,24 +55,19 @@ public class OrganizationController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrganizationResponse> update(@PathVariable Long id,
                                                        @RequestBody OrganizationRequest request) {
-        OrganizationResponse response = organizationService.update(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(organizationService.update(id, request));
     }
 
     @PostMapping("/vendors-and-clients/assign")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VendorClientResponse> updateVendorsAndClients(@RequestBody VendorClientAssignmentRequest request) {
-        VendorClientResponse response = organizationService.assignClientsAndVendors(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(organizationService.assignClientsAndVendors(request));
     }
 
     @GetMapping("/{id}/vendors-and-clients")
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<VendorClientProjectionResponse> fetchVendorsAndClients(@PathVariable Long id) {
-        VendorClientProjectionResponse response = organizationService.getVendorsAndClientsByOrganizationId(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(organizationService.getVendorsAndClientsByOrganizationId(id));
     }
-
-
 
 }

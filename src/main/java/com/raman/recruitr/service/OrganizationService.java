@@ -1,22 +1,34 @@
 package com.raman.recruitr.service;
 
 import com.raman.recruitr.entity.AppUser;
+import com.raman.recruitr.entity.Job;
 import com.raman.recruitr.entity.Organization;
+import com.raman.recruitr.entity.dto.request.JobRequest;
 import com.raman.recruitr.entity.dto.request.OrganizationRequest;
 import com.raman.recruitr.entity.dto.request.VendorClientAssignmentRequest;
-import com.raman.recruitr.entity.dto.response.OrganizationProjection;
-import com.raman.recruitr.entity.dto.response.OrganizationResponse;
-import com.raman.recruitr.entity.dto.response.VendorClientProjectionResponse;
-import com.raman.recruitr.entity.dto.response.VendorClientResponse;
+import com.raman.recruitr.entity.dto.response.*;
 import com.raman.recruitr.exception.ResourceNotFoundException;
+import com.raman.recruitr.repository.JobRepository;
 import com.raman.recruitr.repository.OrganizationRepository;
+import com.raman.recruitr.utils.Constants;
 import com.raman.recruitr.utils.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,11 +38,41 @@ import java.util.List;
 public class OrganizationService {
     private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JobRepository jobRepository;
 
+    // Helper Functions ======================================================================================
     private Organization helperFindById(final Long id) {
         return organizationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id " + id));
     }
+
+    private void updateHelper(OrganizationRequest request, Organization org) {
+        if (request.companyName() != null) org.setCompanyName(request.companyName());
+        if (request.address() != null) org.setAddress(request.address());
+        if (request.city() != null) org.setCity(request.city());
+        if (request.email() != null) org.setEmail(request.email());
+        if (request.website() != null) org.setWebsite(request.website());
+        org.setStatus(Organization.Status.ACTIVE);
+
+        // Update or create account manager only if both email and password are provided
+        if (request.orgAdminEmail() != null && request.orgAdminPassword() != null) {
+            AppUser newAccountManager = AppUser.builder()
+                    .username(request.orgAdminEmail())
+                    .password(passwordEncoder.encode(request.orgAdminPassword()))
+                    .role(AppUser.Role.ORG_ADMIN)
+                    .build();
+            log.info("[OrganizationService] Updated account manager to username {}", request.orgAdminEmail());
+            org.setAccountManager(newAccountManager);
+        }
+    }
+
+    private static Organization getOrganizationFromAuthenticatedUser() {
+        AppUser orgAdmin = (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (orgAdmin.getOrganization() == null) throw new ResourceNotFoundException("No Organization is assigned to your account");
+        return orgAdmin.getOrganization();
+    }
+
+    //  Admin services ======================================================================================
 
     public OrganizationResponse create(OrganizationRequest request) {
         log.info("[OrganizationService] Create new organization request received for {}", request.companyName());
@@ -57,15 +99,7 @@ public class OrganizationService {
         log.info("[OrganizationService] Organization Created successfully for {}", request.companyName());
 
         // return response obj
-        return new OrganizationResponse(
-                saved.getId(),
-                saved.getCompanyName(),
-                saved.getEmail(),
-                saved.getCity(),
-                saved.getStatus().name(),
-                saved.getCreatedAt(),
-                saved.getAccountManager().getUsername()
-        );
+        return Utility.mapToResponse(saved);
     }
 
     public List<OrganizationResponse> getAll() {
@@ -80,28 +114,12 @@ public class OrganizationService {
         return Utility.mapToResponse(helperFindById(id));
     }
 
-
+    @Transactional
     public OrganizationResponse update(final Long id, final OrganizationRequest request) {
         log.info("[OrganizationService] Updating organization with id {}", id);
         Organization org = helperFindById(id);
 
-        if (request.companyName() != null) org.setCompanyName(request.companyName());
-        if (request.address() != null) org.setAddress(request.address());
-        if (request.city() != null) org.setCity(request.city());
-        if (request.email() != null) org.setEmail(request.email());
-        if (request.website() != null) org.setWebsite(request.website());
-        org.setStatus(Organization.Status.ACTIVE);
-
-        // Update or create account manager only if both email and password are provided
-        if (request.orgAdminEmail() != null && request.orgAdminPassword() != null) {
-            AppUser newAccountManager = AppUser.builder()
-                    .username(request.orgAdminEmail())
-                    .password(passwordEncoder.encode(request.orgAdminPassword()))
-                    .role(AppUser.Role.ORG_ADMIN)
-                    .build();
-            log.info("[OrganizationService] Updated account manager to username {}", request.orgAdminEmail());
-            org.setAccountManager(newAccountManager);
-        }
+        updateHelper(request, org);
 
         Organization saved = organizationRepository.save(org);
         log.info("Organization: {} updated successfully", saved.getCompanyName());
@@ -164,4 +182,116 @@ public class OrganizationService {
 
         return new VendorClientProjectionResponse(vendors, clients);
     }
+
+    // Org Admin services ======================================================================================
+
+    @Transactional
+    public OrganizationResponse updateMyOrganization(OrganizationRequest request) {
+        // Fetch logged-in ORG_ADMIN
+        Organization org = getOrganizationFromAuthenticatedUser();
+
+        updateHelper(request, org);
+
+        Organization saved = organizationRepository.save(org);
+        log.info("Your Organization updated successfully");
+
+        return Utility.mapToResponse(saved);
+    }
+
+    public void uploadLogo(MultipartFile file) {
+        if (file.getContentType() == null ||
+            !(file.getContentType().equals("image/png") || file.getContentType().equals("image/jpeg"))) {
+            throw new IllegalArgumentException("Only PNG or JPG images are allowed");
+        }
+
+        Organization org = getOrganizationFromAuthenticatedUser();
+
+        try {
+            // Ensure folder exists
+            Files.createDirectories(Paths.get(Constants.LOGO_DIR));
+
+            String ext = "";
+            String originalName = file.getOriginalFilename();
+            if (originalName != null && originalName.contains(".")) {
+                ext = originalName.substring(originalName.lastIndexOf("."));
+            }
+
+            String newFileName = "logo_org" + org.getId() + ext;
+
+            Path filePath = Paths.get(Constants.LOGO_DIR, newFileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            org.setLogo(newFileName);
+            organizationRepository.save(org);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload logo", e);
+        }
+    }
+
+    public Resource getLogoFile() {
+        Organization org = getOrganizationFromAuthenticatedUser();
+
+        try {
+            Path filePath = Paths.get(Constants.LOGO_DIR, org.getLogo());
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new ResourceNotFoundException("Logo file not found");
+            }
+            return resource;
+
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Failed to read logo file", e);
+        }
+    }
+
+    public OrganizationResponse fetchMyOrganization() {
+        return Utility.mapToResponse(getOrganizationFromAuthenticatedUser());
+
+    }
+
+    public VendorClientProjectionResponse getMyVendorsAndClients() {
+        return getVendorsAndClientsByOrganizationId(getOrganizationFromAuthenticatedUser().getId());
+    }
+
+    /**
+     * Create a new job for the logged-in OrgAdmin's organization
+     */
+    public JobResponse createJob(final JobRequest request) {
+        Organization org = getOrganizationFromAuthenticatedUser();
+
+        Job job = new Job();
+        job.setTitle(request.title());
+        job.setDescription(request.description());
+        job.setRequiredSkills(request.requiredSkills());
+        job.setExperienceLevel(request.experienceLevel());
+        job.setOrganization(org);
+
+        Job saved = jobRepository.save(job);
+        log.info("Job '{}' created for organization {}",
+                saved.getTitle(), org.getCompanyName());
+
+        return Utility.mapToResponse(saved);
+    }
+
+    /**
+     * Update a job: OrgAdmin can only close jobs from their organization
+     */
+    @Transactional
+    public void closeJob(final Long jobId) {
+        Organization org = getOrganizationFromAuthenticatedUser();
+
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id " + jobId));
+
+        if (BooleanUtils.isFalse(job.getOrganization().getId().equals(org.getId()))) {
+            throw new SecurityException("Job not found with id" + jobId);
+        }
+
+        job.setStatus(Job.JobStatus.CLOSED);
+        log.info("Job '{}' closed for organization {}",
+                job.getTitle(), org.getCompanyName());
+
+    }
+
 }
