@@ -7,6 +7,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 @Component
 public class CustomBasicAuthEntryPoint implements AuthenticationEntryPoint {
@@ -18,7 +19,11 @@ public class CustomBasicAuthEntryPoint implements AuthenticationEntryPoint {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \""
-                + authException.getMessage() + "\"}");
+
+        response.getWriter().write("{"
+                + "\"timestamp\": \"" + LocalDateTime.now() + "\","
+                + "\"status\": \"Unauthorized\","
+                + "\"message\": \"" + authException.getMessage() + "\""
+                + "}");
     }
 }

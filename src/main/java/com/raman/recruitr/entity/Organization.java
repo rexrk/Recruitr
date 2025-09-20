@@ -1,5 +1,6 @@
 package com.raman.recruitr.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class Organization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "account_manager_id", unique = true)
     private AppUser accountManager;  // for secutiry
 
@@ -34,8 +35,10 @@ public class Organization {
     private String email;
     private String website;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Enumerated(EnumType.STRING)
     private Status status;
 
@@ -48,7 +51,7 @@ public class Organization {
     private Set<Organization> vendors = new HashSet<>();
 
     @ManyToMany(mappedBy = "vendors")
-    private Set<Organization> clients = new HashSet<>();
+    private Set<Organization> clients = new HashSet<>();  // Self mapping should be stopped
 
     @PrePersist
     public void prePersist() {

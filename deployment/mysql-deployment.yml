@@ -19,13 +19,13 @@ spec:
             - containerPort: 3306
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: root      # root password
+              value: root      # root orgAdminPassword
             - name: MYSQL_DATABASE
               value: recruitr     # database created at startup
             - name: MYSQL_USER
               value: raman   # extra user
             - name: MYSQL_PASSWORD
-              value: admin   # extra user's password
+              value: admin   # extra user's orgAdminPassword
 ---
 apiVersion: v1
 kind: Service
