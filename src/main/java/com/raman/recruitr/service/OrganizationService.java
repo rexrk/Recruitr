@@ -13,6 +13,7 @@ import com.raman.recruitr.repository.OrganizationRepository;
 import com.raman.recruitr.utils.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -89,6 +90,7 @@ public class OrganizationService {
         if (request.city() != null) org.setCity(request.city());
         if (request.email() != null) org.setEmail(request.email());
         if (request.website() != null) org.setWebsite(request.website());
+        org.setStatus(Organization.Status.ACTIVE);
 
         // Update or create account manager only if both email and password are provided
         if (request.orgAdminEmail() != null && request.orgAdminPassword() != null) {
@@ -121,14 +123,20 @@ public class OrganizationService {
 
         // Assigning Vendors
         if (request.vendorIds() != null && !request.vendorIds().isEmpty()) {
-            validVendors.addAll(organizationRepository.findAllById(request.vendorIds()));
+            validVendors.addAll(organizationRepository
+                    .findAllById(request.vendorIds())
+                    .stream().filter(vendor -> vendor.getStatus() == Organization.Status.ACTIVE).toList()
+            );
             org.getVendors().addAll(validVendors); // only existing vendors are added
             log.info("Assigned {} vendors to organization {}", validVendors.size(), org.getCompanyName());
         }
 
         // Assigning Cleitns
         if (request.clientIds() != null && !request.clientIds().isEmpty()) {
-            validClients.addAll(organizationRepository.findAllById(request.clientIds()));
+            validClients.addAll(organizationRepository
+                    .findAllById(request.clientIds())
+                    .stream().filter(client -> client.getStatus() == Organization.Status.ACTIVE).toList()
+            );
             for (Organization client : validClients) {
                 client.getVendors().add(org); // add this org as vendor to valid clients
             }
@@ -139,7 +147,9 @@ public class OrganizationService {
         organizationRepository.save(org);
         log.info("Organization {} updated successfully with assigned clients/vendors", org.getCompanyName());
 
-        // showing orgAdminUsername is redundant ...
+        if(BooleanUtils.isFalse(validVendors.isEmpty())
+                && BooleanUtils.isFalse(validClients.isEmpty())) { org.setStatus(Organization.Status.ACTIVE); }
+
         return new VendorClientResponse(
                 validVendors.stream().map(Utility::mapToResponse).toList(),
                 validClients.stream().map(Utility::mapToResponse).toList()
