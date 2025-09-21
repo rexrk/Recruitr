@@ -4,6 +4,8 @@ import com.raman.recruitr.entity.*;
 import com.raman.recruitr.entity.dto.request.JobAssignmentRequest;
 import com.raman.recruitr.entity.dto.request.JobRequest;
 import com.raman.recruitr.entity.dto.response.*;
+import com.raman.recruitr.exception.ForbiddenException;
+import com.raman.recruitr.exception.IllegalArgumentException;
 import com.raman.recruitr.exception.ResourceNotFoundException;
 import com.raman.recruitr.repository.CandidateRepository;
 import com.raman.recruitr.repository.JobAssignmentRepository;
@@ -11,9 +13,11 @@ import com.raman.recruitr.repository.JobRepository;
 import com.raman.recruitr.utils.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.procedure.ParameterMisuseException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.List;
 
@@ -97,7 +101,7 @@ public class JobService {
      * Assign multiple candidates to a job
      */
     @Transactional
-    public List<JobAssignmentResponse> assignCandidatesToJob(JobAssignmentRequest request) {
+    public List<JobAssignmentResponse> assignCandidatesToJob(final JobAssignmentRequest request) {
         Organization org = getOrganizationFromAuthenticatedUser();
 
         // Fetch the job by id, organization, and ensure it is OPEN
@@ -138,6 +142,10 @@ public class JobService {
 
     @Transactional
     public JobAssignmentResponse updateStatusOfCandidateJob(final Long assignmentId, final JobAssignment.ApplicationStatus newStatus) {
+        if(newStatus == JobAssignment.ApplicationStatus.APPLIED) {
+            throw new ForbiddenException("Cannot update job status back to APPLIED");
+        }
+
         Organization org = getOrganizationFromAuthenticatedUser();
 
         JobAssignment assignment = jobAssignmentRepository.findByIdAndJobOrganizationId(assignmentId, org.getId())

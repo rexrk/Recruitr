@@ -37,7 +37,7 @@ public class CandidateService {
     /**
      * Create candidate for logged-in OrgAdmin's organization
      */
-    public CandidateResponse createCandidate(CandidateRequest request) {
+    public CandidateResponse createCandidate(final CandidateRequest request) {
         Organization org = getOrganizationFromAuthenticatedUser();
 
         Candidate candidate = Candidate.builder()

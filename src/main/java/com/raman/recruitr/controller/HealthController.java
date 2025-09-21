@@ -12,7 +12,7 @@ import java.util.Map;
 @SecurityRequirement(name=Constants.SCHEME_NAME)
 public class HealthController {
 
-    @PreAuthorize("hasRole('ORG_ADMIN')")
+    @PreAuthorize("hasAnyRole('ORG_ADMIN', 'ADMIN', 'USER')")
     @GetMapping("/ping")
     public Map<String, String> ping() {
         return Map.of("message", "Pong");

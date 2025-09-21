@@ -6,6 +6,7 @@ public record OrganizationResponse(
     Long id,
     String companyName,
     String email,
+    String website,
     String city,
     String status,
     LocalDateTime createdAt,

@@ -17,6 +17,7 @@ public class Utility {
                 org.getId(),
                 org.getCompanyName(),
                 org.getEmail(),
+                org.getWebsite(),
                 org.getCity(),
                 org.getStatus().name(),
                 org.getCreatedAt(),

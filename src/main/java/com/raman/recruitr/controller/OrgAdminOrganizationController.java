@@ -5,6 +5,7 @@ import com.raman.recruitr.entity.dto.response.OrganizationResponse;
 import com.raman.recruitr.entity.dto.response.VendorClientProjectionResponse;
 import com.raman.recruitr.service.OrganizationService;
 import com.raman.recruitr.utils.Constants;
+import com.raman.recruitr.validation.OnUpdate;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +33,7 @@ public class OrgAdminOrganizationController {
     private final OrganizationService organizationService;
 
     @PutMapping
-    public ResponseEntity<OrganizationResponse> updateMyOrganization(@RequestBody OrganizationRequest request) {
+    public ResponseEntity<OrganizationResponse> updateMyOrganization(@Validated(OnUpdate.class) @RequestBody OrganizationRequest request) {
         return ResponseEntity.ok(organizationService.updateMyOrganization(request));
     }
 

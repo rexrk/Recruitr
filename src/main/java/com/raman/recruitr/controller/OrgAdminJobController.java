@@ -7,6 +7,7 @@ import com.raman.recruitr.entity.dto.response.JobAssignmentResponse;
 import com.raman.recruitr.entity.dto.response.JobResponse;
 import com.raman.recruitr.service.JobService;
 import com.raman.recruitr.utils.Constants;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,22 +33,25 @@ public class OrgAdminJobController {
     /**
      * Create a new job for the logged-in OrgAdmin's organization
      */
+    @Operation(summary = "Create a job")
     @PostMapping
     public ResponseEntity<JobResponse> createJob(@Valid @RequestBody JobRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(request));
     }
 
-     /**
+    /**
      * Find all jobs inside logged-in OrgAdmin's organization
      */
+    @Operation(summary = "Fetch all jobs from current organization")
     @GetMapping
     public ResponseEntity<List<JobResponse>> fetchAllJobs() {
         return ResponseEntity.status(HttpStatus.OK).body(jobService.getAllJobs());
     }
 
-     /**
+    /**
      * Find one job inside logged-in OrgAdmin's organization
      */
+    @Operation(summary = "Fetch a job by job id from current organization")
     @GetMapping("/{id}")
     public ResponseEntity<JobResponse> fetchJobById(@PathVariable @Positive Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(jobService.getJobById(id));
@@ -56,6 +60,7 @@ public class OrgAdminJobController {
     /**
      * Close an existing job (status = CLOSED)
      */
+    @Operation(summary = "Close a job from current organization")
     @PutMapping("/{id}/close")
     public ResponseEntity<Void> closeJob(@PathVariable @Positive Long id) {
         jobService.closeJob(id);
@@ -65,24 +70,28 @@ public class OrgAdminJobController {
     /**
      * Assign job to candidates (own + Vendors)
      */
+    @Operation(summary = "Assign a job to a candidate")
     @PostMapping("/assigns")
-    public ResponseEntity<List<JobAssignmentResponse>> assignCandidates( @Valid @RequestBody JobAssignmentRequest request) {
+    public ResponseEntity<List<JobAssignmentResponse>> assignCandidates(@Valid @RequestBody JobAssignmentRequest request) {
         return ResponseEntity.ok(jobService.assignCandidatesToJob(request));
     }
 
+    @Operation(summary = "Fetch all assigned candidates by job id from current and vendor organizations")
     @GetMapping("/{id}/assigns")
     public ResponseEntity<List<JobAssignmentResponse>> fetchAllAssignmentsForJob(@PathVariable @Positive Long id) {
         return ResponseEntity.ok(jobService.getAllAssignmentsForJob(id));
     }
 
-    @GetMapping("/assigns/{id}")
+    @Operation(summary = "Check status of assigned job to a candidate / Fetch job assignment detail")
+    @GetMapping("/assigns/{id}/status")
     public ResponseEntity<JobAssignmentResponse> fetchAssignment(@PathVariable @Positive Long id) {
         return ResponseEntity.ok(jobService.getJobAssignmentById(id));
     }
 
+    @Operation(summary = "Update status of assigned job to a candidate [Applied -> Accepted or Rejected]")
     @PatchMapping("/assigns/{id}/status")
     public ResponseEntity<JobAssignmentResponse> updateAssignmentStatus(@PathVariable @Positive Long id,
-            @RequestParam JobAssignment.ApplicationStatus status) {
+                                                                        @RequestParam JobAssignment.ApplicationStatus status) {
         return ResponseEntity.ok(jobService.updateStatusOfCandidateJob(id, status));
     }
 

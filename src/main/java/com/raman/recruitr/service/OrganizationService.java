@@ -1,9 +1,7 @@
 package com.raman.recruitr.service;
 
 import com.raman.recruitr.entity.AppUser;
-import com.raman.recruitr.entity.Candidate;
 import com.raman.recruitr.entity.Organization;
-import com.raman.recruitr.entity.dto.request.CandidateRequest;
 import com.raman.recruitr.entity.dto.request.OrganizationRequest;
 import com.raman.recruitr.entity.dto.request.VendorClientAssignmentRequest;
 import com.raman.recruitr.entity.dto.response.*;
@@ -31,8 +29,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +44,8 @@ public class OrganizationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id " + id));
     }
 
-    private void updateHelper(OrganizationRequest request, Organization org) {
+    private void updateHelper(final OrganizationRequest request, final Organization org) {
+        // [Enhancement] Needs advanced checking as user can send bad data...
         if (request.companyName() != null) org.setCompanyName(request.companyName());
         if (request.address() != null) org.setAddress(request.address());
         if (request.city() != null) org.setCity(request.city());
@@ -63,8 +60,11 @@ public class OrganizationService {
                     .password(passwordEncoder.encode(request.orgAdminPassword()))
                     .role(AppUser.Role.ORG_ADMIN)
                     .build();
-            log.info("[OrganizationService] Updated account manager to username {}", request.orgAdminEmail());
+            log.info("Updated account manager to username {}", request.orgAdminEmail());
             org.setAccountManager(newAccountManager);
+
+        } else {
+            log.info("Provide both username and password to create new account manager");
         }
     }
 
@@ -76,8 +76,8 @@ public class OrganizationService {
 
     //  Admin services ======================================================================================
 
-    public OrganizationResponse create(OrganizationRequest request) {
-        log.info("[OrganizationService] Create new organization request received for {}", request.companyName());
+    public OrganizationResponse create(final OrganizationRequest request) {
+        log.info("Create new organization request received for {}", request.companyName());
 
         // Create an account manager
         AppUser accountManager = AppUser.builder()
@@ -98,27 +98,27 @@ public class OrganizationService {
         // save to databse
         // maybe check if exists first
         Organization saved = organizationRepository.save(org);
-        log.info("[OrganizationService] Organization Created successfully for {}", request.companyName());
+        log.info("Organization Created successfully for {}", request.companyName());
 
         // return response obj
         return Utility.mapToResponse(saved);
     }
 
     public List<OrganizationResponse> getAll() {
-        log.info("[OrganizationService] Fetching all organizations");
+        log.info("Fetching all organizations");
         return organizationRepository.findAll().stream()
                 .map(Utility::mapToResponse)
                 .toList();
     }
 
-    public OrganizationResponse getById(Long id) {
-        log.info("[OrganizationService] Fetching organization with id {}", id);
+    public OrganizationResponse getById(final Long id) {
+        log.info("Fetching organization with id {}", id);
         return Utility.mapToResponse(helperFindById(id));
     }
 
     @Transactional
     public OrganizationResponse update(final Long id, final OrganizationRequest request) {
-        log.info("[OrganizationService] Updating organization with id {}", id);
+        log.info("Updating organization with id {}", id);
         Organization org = helperFindById(id);
 
         updateHelper(request, org);
@@ -131,11 +131,11 @@ public class OrganizationService {
     public void delete(final Long id) {
         Organization org = helperFindById(id);
         org.setStatus(Organization.Status.INACTIVE);
-        log.info("Organization: {} marked as INACTIVE", org.getCompanyName());
+        log.info("Organization '{}' marked as INACTIVE", org.getCompanyName());
         organizationRepository.save(org);
     }
 
-    public VendorClientResponse assignClientsAndVendors(VendorClientAssignmentRequest request) {
+    public VendorClientResponse assignClientsAndVendors(final VendorClientAssignmentRequest request) {
         Organization org = helperFindById(request.organizationId());
         log.info("Assigning clients/vendors for organization id {}", request.organizationId());
         List<Organization> validVendors = new ArrayList<>();
@@ -188,14 +188,14 @@ public class OrganizationService {
     // Org Admin services ======================================================================================
 
     @Transactional
-    public OrganizationResponse updateMyOrganization(OrganizationRequest request) {
+    public OrganizationResponse updateMyOrganization(final OrganizationRequest request) {
         // Fetch logged-in ORG_ADMIN
         Organization org = getOrganizationFromAuthenticatedUser();
 
         updateHelper(request, org);
 
         Organization saved = organizationRepository.save(org);
-        log.info("Your Organization updated successfully");
+        log.info("Your Organization {} updated successfully", saved.getCompanyName());
 
         return Utility.mapToResponse(saved);
     }
@@ -233,6 +233,7 @@ public class OrganizationService {
 
     public Resource getLogoFile() {
         Organization org = getOrganizationFromAuthenticatedUser();
+        if (org.getLogo() == null) throw new ResourceNotFoundException("Logo file not found");
 
         try {
             Path filePath = Paths.get(Constants.LOGO_DIR, org.getLogo());
