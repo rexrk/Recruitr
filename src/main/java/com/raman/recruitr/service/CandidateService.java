@@ -11,13 +11,19 @@ import com.raman.recruitr.repository.OrganizationRepository;
 import com.raman.recruitr.utils.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -90,23 +96,30 @@ public class CandidateService {
      * List candidates visible to the organization (own + vendor candidates)
      */
     // Todo: apply filters
-    public List<CandidateResponse> getAllCandidates() {
+    public List<CandidateResponse> getAllCandidates(final int page, final int size) {
         Organization org = getOrganizationFromAuthenticatedUser();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
-        // get own candidates
-        List<Candidate> visible = candidateRepository.findAllByOrganizationId(org.getId());
-        long size = visible.size();
-        log.info("Candidates found in '{}' organization: {}", org.getCompanyName(), size);
+        // 1️⃣ Own candidates (paged)
+        Page<Candidate> ownCandidatesPage = candidateRepository.findAllByOrganizationId(org.getId(), pageable);
+        List<Candidate> allCandidates = new ArrayList<>(ownCandidatesPage.getContent());
+        long ownCount = allCandidates.size();
 
-        // get candidates from vendors assigned to this org
+        log.info("Candidates found in '{}' organization: {}", org.getCompanyName(), ownCount);
+
+        // 2️⃣ Candidates from vendor organizations (paged separately if needed)
         Set<Long> vendorIds = organizationRepository.findVendorIdsByOrganizationId(org.getId());
         if (!vendorIds.isEmpty()) {
-            visible.addAll(candidateRepository.findAllByOrganizationIds(vendorIds));
-            log.info("Candidates found in vendor organizations: {}", visible.size() - size);
+            List<Candidate> vendorCandidates = candidateRepository.findAllByOrganizationIds(vendorIds, pageable).getContent();
+            allCandidates.addAll(vendorCandidates);
+            log.info("Candidates found in vendor organizations: {}", vendorCandidates.size());
         }
 
-        return visible.stream().map(Utility::mapToResponse).toList();
+        return allCandidates.stream()
+                .map(Utility::mapToResponse)
+                .toList();
     }
+
 
     @Transactional
     public void deleteCandidate(final Long candidateId) {
@@ -124,5 +137,18 @@ public class CandidateService {
         log.info("Candidate '{}' deleted by organization {}", candidate.getEmail(), org.getCompanyName());
     }
 
+    @Transactional(readOnly = true)
+    public List<CandidateResponse> searchCandidates(Set<String> skills) {
+        Organization org = getOrganizationFromAuthenticatedUser();
+        Set<String> normalizedSkills = skills.stream()
+                .map(String::toLowerCase)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        return candidateRepository.searchCandidatesBySkills(normalizedSkills, org.getId())
+                .stream()
+                .map(Utility::mapToResponse)
+                .toList();
+    }
 
 }

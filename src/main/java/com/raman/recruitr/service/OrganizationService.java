@@ -15,6 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -104,9 +108,13 @@ public class OrganizationService {
         return Utility.mapToResponse(saved);
     }
 
-    public List<OrganizationResponse> getAll() {
+    @Transactional(readOnly = true)
+    public List<OrganizationResponse> getAll(final int page, final int size) {
         log.info("Fetching all organizations");
-        return organizationRepository.findAll().stream()
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+        Page<Organization> orgPage = organizationRepository.findAll(pageable);
+
+        return orgPage.getContent().stream()
                 .map(Utility::mapToResponse)
                 .toList();
     }

@@ -8,7 +8,7 @@ import com.raman.recruitr.validation.OnCreate;
 import com.raman.recruitr.validation.OnUpdate;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/organization/candidates")
@@ -35,8 +36,11 @@ public class OrgAdminCandidateController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CandidateResponse>> getVisibleCandidates() {
-        return ResponseEntity.status(HttpStatus.OK).body(candidateService.getAllCandidates());
+    public ResponseEntity<List<CandidateResponse>> getVisibleCandidates(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(candidateService.getAllCandidates(page, size));
     }
 
     @PutMapping("/{id}")
@@ -50,5 +54,12 @@ public class OrgAdminCandidateController {
     public ResponseEntity<Void> deleteCandidate(@PathVariable @Positive Long id) {
         candidateService.deleteCandidate(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ORG_ADMIN','ADMIN','USER')")
+    public ResponseEntity<List<CandidateResponse>> searchCandidates(@NotNull @RequestParam Set<String> skills) {
+        return ResponseEntity.ok(candidateService.searchCandidates(skills));
     }
 }

@@ -37,8 +37,11 @@ public class AdminOrganizationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OrganizationResponse>> getAll() {
-        return ResponseEntity.ok(organizationService.getAll());
+    public ResponseEntity<List<OrganizationResponse>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(organizationService.getAll(page, size));
     }
 
     @GetMapping("/{id}")

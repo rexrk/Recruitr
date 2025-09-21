@@ -111,6 +111,13 @@ The database schema can be found at:\
 
 ---
 
+## **Metrics**
+
+- **Actuator:** [http://localhost:8080/actuator](http://localhost:8080/actuator) - Open Endpoint
+- **OpenAPI docs:** [http://localhost:8080/actuator/job-fill-rate](http://localhost:8080/actuator/job-fill-rate) - OrgAdmin Role
+
+
+
 ## **Usage Notes**
 
 - Use the **Swagger UI** to explore all available APIs.
