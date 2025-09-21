@@ -75,13 +75,13 @@ app.admin.password={pass}
 
 ## **Default Organization Admin Credentials**
 
-| Organization                    | Username                                             | Password          |
-| ------------------------------- | ---------------------------------------------------- | ----------------- |
-| TalentBridge Staffing Solutions | [hr@talentbridge.com](mailto\:hr@talentbridge.com)   | talentbridge\@123 |
-| NextHire Consulting             | [admin@nexthire.com](mailto\:admin@nexthire.com)     | nexthire\@123     |
-| Global Edge Staffing            | [admin@globaledge.com](mailto\:admin@globaledge.com) | globaledge\@123   |
-| Microsoft Corporation           | [admin@microsoft.com](mailto\:admin@microsoft.com)   | microsoft\@123    |
-| Blinkit Technologies Pvt. Ltd.  | [admin@blinkit.com](mailto\:admin@blinkit.com)       | blinkit\@123      |
+| Organization                    | Username             | Password            |
+| ------------------------------- |----------------------|---------------------|
+| TalentBridge Staffing Solutions | hr@talentbridge.com  | talentbridge\@123   |
+| NextHire Consulting             | admin@nexthire.com   | nexthire\@123       |
+| Global Edge Staffing            | admin@globaledge.com | globaledge\@123     |
+| Microsoft Corporation           | admin@microsoft.com  | microsoft\@123      |
+| Blinkit Technologies Pvt. Ltd.  | admin@blinkit.com    | blinkit\@123        |
 
 ---
 

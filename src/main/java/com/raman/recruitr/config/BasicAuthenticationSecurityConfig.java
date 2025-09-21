@@ -2,6 +2,7 @@ package com.raman.recruitr.config;
 
 import com.raman.recruitr.service.AppUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -34,6 +35,7 @@ public class BasicAuthenticationSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll() // Opened actuator endpoints for now
                         .anyRequest().authenticated())
                 .httpBasic(basic -> basic.authenticationEntryPoint(authEntryPoint))
                 .build();
