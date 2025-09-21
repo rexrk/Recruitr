@@ -1,14 +1,14 @@
 package com.raman.recruitr.service;
 
 import com.raman.recruitr.entity.AppUser;
-import com.raman.recruitr.entity.Job;
+import com.raman.recruitr.entity.Candidate;
 import com.raman.recruitr.entity.Organization;
-import com.raman.recruitr.entity.dto.request.JobRequest;
+import com.raman.recruitr.entity.dto.request.CandidateRequest;
 import com.raman.recruitr.entity.dto.request.OrganizationRequest;
 import com.raman.recruitr.entity.dto.request.VendorClientAssignmentRequest;
 import com.raman.recruitr.entity.dto.response.*;
 import com.raman.recruitr.exception.ResourceNotFoundException;
-import com.raman.recruitr.repository.JobRepository;
+import com.raman.recruitr.repository.CandidateRepository;
 import com.raman.recruitr.repository.OrganizationRepository;
 import com.raman.recruitr.utils.Constants;
 import com.raman.recruitr.utils.Utility;
@@ -31,6 +31,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +40,7 @@ import java.util.List;
 public class OrganizationService {
     private final OrganizationRepository organizationRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JobRepository jobRepository;
+    private final CandidateRepository candidateRepository;
 
     // Helper Functions ======================================================================================
     private Organization helperFindById(final Long id) {
@@ -166,7 +168,7 @@ public class OrganizationService {
         log.info("Organization {} updated successfully with assigned clients/vendors", org.getCompanyName());
 
         if(BooleanUtils.isFalse(validVendors.isEmpty())
-                && BooleanUtils.isFalse(validClients.isEmpty())) { org.setStatus(Organization.Status.ACTIVE); }
+                || BooleanUtils.isFalse(validClients.isEmpty())) { org.setStatus(Organization.Status.ACTIVE); }
 
         return new VendorClientResponse(
                 validVendors.stream().map(Utility::mapToResponse).toList(),
@@ -252,46 +254,6 @@ public class OrganizationService {
 
     public VendorClientProjectionResponse getMyVendorsAndClients() {
         return getVendorsAndClientsByOrganizationId(getOrganizationFromAuthenticatedUser().getId());
-    }
-
-    /**
-     * Create a new job for the logged-in OrgAdmin's organization
-     */
-    public JobResponse createJob(final JobRequest request) {
-        Organization org = getOrganizationFromAuthenticatedUser();
-
-        Job job = new Job();
-        job.setTitle(request.title());
-        job.setDescription(request.description());
-        job.setRequiredSkills(request.requiredSkills());
-        job.setExperienceLevel(request.experienceLevel());
-        job.setOrganization(org);
-
-        Job saved = jobRepository.save(job);
-        log.info("Job '{}' created for organization {}",
-                saved.getTitle(), org.getCompanyName());
-
-        return Utility.mapToResponse(saved);
-    }
-
-    /**
-     * Update a job: OrgAdmin can only close jobs from their organization
-     */
-    @Transactional
-    public void closeJob(final Long jobId) {
-        Organization org = getOrganizationFromAuthenticatedUser();
-
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id " + jobId));
-
-        if (BooleanUtils.isFalse(job.getOrganization().getId().equals(org.getId()))) {
-            throw new SecurityException("Job not found with id" + jobId);
-        }
-
-        job.setStatus(Job.JobStatus.CLOSED);
-        log.info("Job '{}' closed for organization {}",
-                job.getTitle(), org.getCompanyName());
-
     }
 
 }

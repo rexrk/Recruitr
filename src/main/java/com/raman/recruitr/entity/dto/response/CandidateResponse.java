@@ -9,6 +9,7 @@ public record CandidateResponse(
     String lastName,
     String email,
     String phone,
+    String resumeReferenceUrl,
     Set<String> primarySkills,
     Double totalExperience,
     String currentLocation,

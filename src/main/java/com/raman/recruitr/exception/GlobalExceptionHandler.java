@@ -3,6 +3,7 @@ package com.raman.recruitr.exception;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,6 +29,12 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining("; "));
 
         ApiErrorResponse error = ApiErrorResponse.of(HttpStatus.BAD_REQUEST, message);
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidationExceptions(HttpMessageNotReadableException ex) {
+        ApiErrorResponse error = ApiErrorResponse.of(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
         return ResponseEntity.badRequest().body(error);
     }
 

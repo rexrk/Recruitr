@@ -22,7 +22,7 @@ public class CustomBasicAuthEntryPoint implements AuthenticationEntryPoint {
 
         response.getWriter().write("{"
                 + "\"timestamp\": \"" + LocalDateTime.now() + "\","
-                + "\"status\": \"Unauthorized\","
+                + "\"status\": \"UNAUTHORIZED\","
                 + "\"message\": \"" + authException.getMessage() + "\""
                 + "}");
     }

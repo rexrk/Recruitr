@@ -5,9 +5,11 @@ import com.raman.recruitr.entity.dto.response.OrganizationProjection;
 import com.raman.recruitr.entity.dto.response.OrganizationResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, Long> {
@@ -37,5 +39,8 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
         where org.id = :id
     """)
     List<OrganizationProjection> findClientsByOrgId(Long id);
+
+    @Query("SELECT v.id FROM Organization o JOIN o.vendors v WHERE o.id = :orgId")
+    Set<Long> findVendorIdsByOrganizationId(@Param("orgId") Long orgId);
 
 }
