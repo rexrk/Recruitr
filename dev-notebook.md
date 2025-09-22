@@ -27,7 +27,7 @@ Day : 3
 [x] Proper HTTP status codes
 
 ### Bonus Features (Optional)
-[] Pagination & ﬁltering on list APIs
+[x] Pagination & ﬁltering on list APIs
 [x] Candidate search by skills
 [x] Reporting/metrics endpoints (e.g., job ﬁll rate)
 [] Unit & integration tests

@@ -2,7 +2,6 @@ package com.raman.recruitr.repository;
 
 import com.raman.recruitr.entity.Organization;
 import com.raman.recruitr.entity.dto.response.OrganizationProjection;
-import com.raman.recruitr.entity.dto.response.OrganizationResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
