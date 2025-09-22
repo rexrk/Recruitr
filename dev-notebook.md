@@ -13,7 +13,7 @@ Day : 3
 ### Database
 [x] MySQL or PostgreSQL
 [x] Proper schema design with relationships
-[ ] Indexing for performance
+[x] Indexing for performance
 
 ### API Documentation
 [x] Swagger/OpenAPI
@@ -30,7 +30,7 @@ Day : 3
 [x] Pagination & ﬁltering on list APIs
 [x] Candidate search by skills
 [x] Reporting/metrics endpoints (e.g., job ﬁll rate)
-[] Unit & integration tests
+[x] Unit & integration tests  - some tests + curl db inits
 [x] Logging & monitoring
 
 

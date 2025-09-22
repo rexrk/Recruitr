@@ -15,6 +15,9 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @ToString
+@Table(
+        indexes = @Index(name = "idx_candidate_organization", columnList = "organization_id")
+)
 public class Candidate {
 
     @Id

@@ -44,7 +44,12 @@ chmod +x init-db.sh
 init-db-data.bat
 ```
 
-> This script will populate organizations, candidates, jobs, and job assignments automatically.
+---
+
+## **Indexing for Performance (Recommended for performance in large data)**
+```
+CREATE INDEX idx_client_vendor ON vendor_client(client_id, vendor_id);
+```
 
 ---
 

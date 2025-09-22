@@ -13,6 +13,9 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@Table(
+        indexes = @Index(name = "idx_job_organization", columnList = "organization_id")
+)
 public class Job {
 
     @Id
